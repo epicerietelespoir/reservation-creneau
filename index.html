@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Réservation Épicerie Télespoir</title>
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3.2.0/dist/email.min.js"></script>
+<script>
+  emailjs.init("q_q1Ymuq0qOD8IG6a");
+</script>
+
+<style>
+  body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 40px; }
+  h1 { text-align: center; color: #4CAF50; }
+  input, button { padding: 10px; margin: 5px 0; width: 100%; max-width: 400px; display: block; }
+  button { cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px; }
+  button:hover { background: #45a049; }
+  .slot-btn { margin: 5px 0; }
+  .taken { color: red; font-weight: bold; }
+  #slots { margin-top: 20px; }
+  .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Réserver un créneau</h1>
+
+
+  <input type="text" id="prenom" placeholder="Prénom" required>
+  <input type="text" id="name" placeholder="Nom" required>
+  <input type="email" id="email" placeholder="Email" required>
+
+  <div id="slots"></div>
+</div>
+
+<script>
+  // Liste de créneaux
+  const slots = [
+    "Lundi 10h", "Lundi 11h", "Lundi 14h",
+    "Mardi 10h", "Mardi 11h", "Mardi 14h"
+  ];
+
+  // Slots déjà pris (localStorage)
+  let taken = JSON.parse(localStorage.getItem("takenSlots")) || [];
+
+  function render() {
+    const div = document.getElementById("slots");
+    div.innerHTML = "<h3>Créneaux disponibles :</h3>";
+
+    slots.forEach(slot => {
+      if (taken.includes(slot)) {
+        div.innerHTML += `<p class="taken">❌ ${slot} (Pris)</p>`;
+      } else {
+        const btn = document.createElement("button");
+        btn.textContent = "Réserver " + slot;
+        btn.className = "slot-btn";
+        btn.onclick = () => book(slot);
+        div.appendChild(btn);
+      }
+    });
+  }
+
+function book(slot) {
+  const prenom = document.getElementById("prenom").value;
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+
+  if (!name || !email || !prenom) {
+    alert("Veuillez remplir votre prénom, nom et email !");
+    return;
+  }
+
+  // 1️⃣ Mail pour toi (admin)
+  emailjs.send("service_98v3zye", "template_ii2jcrg", {
+    name: name,
+    email: email,
+    prenom: prenom,
+    slot: slot
+  }).then((response) => {
+    console.log("Notification admin envoyée !", response);
+  }).catch((err) => {
+    console.error("Erreur EmailJS admin:", err);
+  });
+
+  // 2️⃣ Mail de confirmation pour le client
+  emailjs.send("service_98v3zye", "template_glyge5x", {
+    name: name,
+    email: email,
+    prenom: prenom,
+    slot: slot
+  }).then((response) => {
+    console.log("Confirmation client envoyée !", response);
+    alert(`Merci ${prenom} ! Votre créneau "${slot}" a été réservé. Un email de confirmation vous a été envoyé.`);
+  }).catch((err) => {
+    console.error("Erreur EmailJS client:", err);
+  });
+
+  // Ajouter le slot à pris
+  taken.push(slot);
+  localStorage.setItem("takenSlots", JSON.stringify(taken));
+  render();
+}
+
+
+
+  render();
+</script>
+
+</body>
+</html>
